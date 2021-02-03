@@ -5,6 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
+var passport = require('passport');
+var authenticate = require('./authenticate');
 
 
 var indexRouter = require('./routes/index');
@@ -43,65 +45,20 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-
-// function auth (req, res, next) {   //without using users.js(router)
-//   console.log(req.session);
-
-//   if (!req.session.user) {
-//     var authHeader = req.headers.authorization;
-//     if (!authHeader) {
-//         var err = new Error('You are not authenticated!');
-//         res.setHeader('WWW-Authenticate', 'Basic');
-//         err.status = 401;
-//         next(err);
-//         return;
-//     }
-
-//     var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-//     var username = auth[0];
-//     var password = auth[1];
-//     if (username == 'admin' && password == 'password') {
-//       req.session.user='admin';
-//         next(); // authorized
-//     } else {
-//         var err = new Error('You are not authenticated!');
-//         res.setHeader('WWW-Authenticate', 'Basic');      
-//         err.status = 401;
-//         next(err);
-//     }
-//   }
-//   else {
-//     if (req.session.user === 'admin') {
-//         next();
-//     }
-//     else {
-//         var err = new Error('You are not authenticated!');
-//         err.status = 401;
-//         next(err);
-//     }
-//   }
-// }
-
 function auth (req, res, next) {
-  console.log(req.session);
-
-if(!req.session.user) {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    return next(err);
-}
-else {
-  if (req.session.user === 'authenticated') {
-    next();
+  if(!req.user) {
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
   }
   else {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    return next(err);
-  }
-}
+      next();  
+    }
 }
 
 app.use(auth);
